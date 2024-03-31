@@ -16,7 +16,7 @@ def main():
 
     cm.find_client(first_name='Иван', last_name='Иванов')
 
-    cm.update_client("Новое имя", "Новая фамилия", "ivan@example.com")
+    cm.update_client(client_id=client_id, first_name="Новое имя", last_name="Новая фамилия", email="ivan@example.com")
 
     cm.del_phone(client_id, '+55555555555')
 
