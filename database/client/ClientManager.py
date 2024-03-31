@@ -76,18 +76,26 @@ class ClientManager(DatabaseManager):
         except (Exception, Error) as error:
             print("Ошибка при добавлении телефона", error)
 
-    def update_client(self, first_name, last_name, email):
+    def update_client(self, client_id, **kwargs):
         try:
-            if get_user_not_exists(self._cursor, email=email):
-                update_client_query = '''
-                    UPDATE Clients
-                    SET first_name=%s, last_name=%s, email=%s
-                    WHERE email=%s;
-                '''
-                self._cursor.execute(update_client_query, (first_name, last_name, email, email))
+            update_fields = []
+            values = []
 
-                self._conn.commit()
-                print("Данные о клиенте успешно изменены")
+            for key, value in kwargs.items():
+                update_fields.append(f"{key} = %s")
+                values.append(value)
+
+            values.append(client_id)
+
+            update_client_query = f'''
+                UPDATE Clients
+                SET {', '.join(update_fields)}
+                WHERE client_id = %s;
+            '''
+
+            self._cursor.execute(update_client_query, tuple(values))
+            self._conn.commit()
+            print("Данные о клиенте успешно изменены")
         except (Exception, Error) as error:
             print("Ошибка при изменении данных о клиенте", error)
 
@@ -125,16 +133,22 @@ class ClientManager(DatabaseManager):
         except (Exception, Error) as error:
             print("Ошибка при удалении клиента", error)
 
-    def find_client(self, first_name=None, last_name=None, email=None, phone_number=None):
+    def find_client(self, **kwargs):
         try:
-            find_client_query = '''
+            conditions = []
+            values = []
+
+            for key, value in kwargs.items():
+                if value is not None:
+                    conditions.append(f"{key} ILIKE %s")
+                    values.append(value)
+
+            find_client_query = f'''
                 SELECT * FROM Clients
-                WHERE first_name ILIKE %s
-                OR last_name ILIKE %s
-                OR email ILIKE %s
-                OR client_id IN (SELECT client_id FROM Phones WHERE phone_number = %s);
+                WHERE {' AND '.join(conditions)};
             '''
-            self._cursor.execute(find_client_query, (first_name, last_name, email, phone_number))
+
+            self._cursor.execute(find_client_query, tuple(values))
             clients = self._cursor.fetchall()
 
             if clients:
